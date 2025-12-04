@@ -18,7 +18,7 @@ export const Header: React.FC = () => {
       </h1>
       
       <p className="text-slate-300 max-w-lg text-base md:text-lg leading-relaxed">
-        Ultra-concise intelligence for product & tech leaders. <br/>
+        Ultra-concise intelligence for product & tech leaders — curated by Lee Heston-Fraser.<br/>
         <span className="text-slate-400 text-sm">AI • Product • Health • Markets</span>
       </p>
     </header>

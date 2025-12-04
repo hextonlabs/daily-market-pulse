@@ -4,15 +4,16 @@ export interface Source {
 }
 
 export interface PulseItem {
-  category: string;
+  category: string; // e.g. "Markets", "Product", "GenAI", "Health"
   headline: string;
   summary: string;
   implication: string;
-  visualPrompt: string;
+  url?: string;
 }
 
 export interface PulseData {
-  items: PulseItem[];
+  general: PulseItem[];
+  healthAi: PulseItem[];
   sources: Source[];
 }
 

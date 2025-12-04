@@ -2,27 +2,29 @@ import { GoogleGenAI } from "@google/genai";
 import { PulseData, Source, PulseItem } from "../types";
 
 const SYSTEM_INSTRUCTION = `
-You are Daily Market Pulse: an ultra-concise trend summariser.
-Your role: produce a short, analytical briefing across four areas:
-1. AI
-2. Product Management
-3. Digital Health / Wellness
-4. Tech markets
+You are Daily Market Pulse.
+Your role: produce a JSON object with two distinct sections.
 
-Rules:
-- UK spelling
-- Focus on what shifted in the last 24 hours
-- Include 1–2 implications for someone working in product or AI strategy
-- VISUAL PROMPT: Provide a short, artistic, description of the news topic (e.g. "glowing neural network nodes cyan", "digital stock chart rising orange") for an image generator.
+SECTION 1 key: "general"
+- Provide 3 ultra-concise items on General Tech, Product Management, or Global Markets.
+- Exclude Health/BioTech from this section.
 
-IMPORTANT: Output strictly as a JSON array. Do not wrap the JSON in markdown code blocks.
-The schema for each item in the array is:
+SECTION 2 key: "healthAi"
+- Provide 3 ultra-concise items specifically on AI in Healthcare, Biotech, or Wellness.
+
+Rules for ALL items:
+- Focus on the biggest shift in the last 24h.
+- headline: Max 5 words. Punchy.
+- summary: Max 12 words. Simple English.
+- implication: Max 8 words. Direct takeaway.
+- category: One word tag (e.g., "Markets", "Tech", "Product", "Pharma", "Clinical", "Wearables").
+- url: The specific source URL where you found this information.
+
+IMPORTANT: Output strictly as a JSON object. Do not wrap in markdown.
+Schema:
 {
-  "category": "string",
-  "headline": "string",
-  "summary": "string",
-  "implication": "string",
-  "visualPrompt": "string"
+  "general": [ { "category": "...", "headline": "...", "summary": "...", "implication": "...", "url": "..." }, ... ],
+  "healthAi": [ { "category": "...", "headline": "...", "summary": "...", "implication": "...", "url": "..." }, ... ]
 }
 `;
 
@@ -37,45 +39,30 @@ export const generateMarketPulse = async (): Promise<PulseData> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: "Give me today’s Daily Market Pulse as a raw JSON array.",
+      contents: "Give me today’s Daily Market Pulse in the required JSON format.",
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         tools: [{ googleSearch: {} }],
-        // responseMimeType and responseSchema are not compatible with googleSearch tools, so we rely on text instructions.
       },
     });
 
-    let jsonText = response.text || "[]";
+    let jsonText = response.text || "{}";
     
-    // Clean up markdown code blocks if present (e.g. ```json ... ```)
+    // Clean up markdown code blocks if present
     jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
 
-    let items: PulseItem[] = [];
+    let parsedData: any = {};
     try {
-      items = JSON.parse(jsonText);
+      parsedData = JSON.parse(jsonText);
     } catch (parseError) {
       console.error("Failed to parse JSON response:", jsonText);
-      throw new Error("Failed to parse the market pulse data from the AI response.");
+      throw new Error("Failed to parse the market pulse data.");
     }
-    
-    // Extract sources from grounding chunks
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    const sources: Source[] = [];
-
-    groundingChunks.forEach((chunk: any) => {
-      if (chunk.web?.uri && chunk.web?.title) {
-        sources.push({
-          title: chunk.web.title,
-          uri: chunk.web.uri,
-        });
-      }
-    });
-
-    const uniqueSources = sources.filter((v, i, a) => a.findIndex(t => (t.uri === v.uri)) === i);
 
     return {
-      items,
-      sources: uniqueSources,
+      general: parsedData.general || [],
+      healthAi: parsedData.healthAi || [],
+      sources: [], // No longer needed for display
     };
 
   } catch (error: any) {

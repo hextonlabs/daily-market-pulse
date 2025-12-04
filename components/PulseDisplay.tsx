@@ -1,114 +1,133 @@
 import React from 'react';
 import { PulseData, PulseItem } from '../types';
-import { ExternalLink, BookOpen, TrendingUp, Lightbulb } from 'lucide-react';
+import { Lightbulb, Zap, Activity, ExternalLink } from 'lucide-react';
 
 interface PulseDisplayProps {
   data: PulseData;
 }
 
-const CategoryCard: React.FC<{ item: PulseItem; index: number }> = ({ item, index }) => {
-  // Map categories to specific color themes
-  const getTheme = (cat: string) => {
-    const lower = cat.toLowerCase();
-    if (lower.includes('ai')) return { bg: 'bg-indigo-50', text: 'text-indigo-900', accent: 'bg-indigo-500', border: 'border-indigo-100', badge: 'bg-indigo-100 text-indigo-700' };
-    if (lower.includes('product')) return { bg: 'bg-emerald-50', text: 'text-emerald-900', accent: 'bg-emerald-500', border: 'border-emerald-100', badge: 'bg-emerald-100 text-emerald-700' };
-    if (lower.includes('health')) return { bg: 'bg-rose-50', text: 'text-rose-900', accent: 'bg-rose-500', border: 'border-rose-100', badge: 'bg-rose-100 text-rose-700' };
-    return { bg: 'bg-amber-50', text: 'text-amber-900', accent: 'bg-amber-500', border: 'border-amber-100', badge: 'bg-amber-100 text-amber-700' };
-  };
+// Curated high-performance images to ensure instant loading
+const IMAGE_POOLS: Record<string, string[]> = {
+  general: [
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80", // Skyscrapers
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80", // Chip
+    "https://images.unsplash.com/photo-1611974765270-ca1258634369?auto=format&fit=crop&w=600&q=80", // Stock tickers
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80", // Matrix code
+    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", // Analytics
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80", // Globe
+  ],
+  health: [
+    "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80", // DNA
+    "https://images.unsplash.com/photo-1581093458791-9f302e6d839b?auto=format&fit=crop&w=600&q=80", // Robot arm
+    "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80", // Research
+    "https://images.unsplash.com/photo-1559757131-406ead92983b?auto=format&fit=crop&w=600&q=80", // Doctor
+    "https://images.unsplash.com/photo-1584036561566-b93a901668d7?auto=format&fit=crop&w=600&q=80", // Micro
+    "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?auto=format&fit=crop&w=600&q=80", // Pills/Data
+  ]
+};
 
-  const theme = getTheme(item.category);
-  const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(item.visualPrompt + " minimal modern high quality abstract 3d render")}`;
+const getInstantImage = (section: 'general' | 'health', index: number) => {
+  const pool = IMAGE_POOLS[section];
+  return pool[index % pool.length];
+};
+
+const Card: React.FC<{ item: PulseItem; index: number; section: 'general' | 'health' }> = ({ item, index, section }) => {
+  const theme = section === 'general' 
+    ? { border: 'border-indigo-500/30', badge: 'bg-indigo-500 text-white', text: 'text-indigo-200' }
+    : { border: 'border-emerald-500/30', badge: 'bg-emerald-500 text-white', text: 'text-emerald-200' };
+
+  const imageUrl = getInstantImage(section, index);
+  
+  // Use provided URL or fallback to a Google search for the headline
+  const linkUrl = item.url || `https://www.google.com/search?q=${encodeURIComponent(item.headline)}`;
 
   return (
-    <div className={`relative overflow-hidden bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full border ${theme.border}`}>
-      {/* Image Area */}
-      <div className="h-40 w-full bg-gray-200 overflow-hidden relative">
+    <a 
+      href={linkUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`group relative flex flex-col bg-slate-800 rounded-xl overflow-hidden border ${theme.border} hover:border-white/40 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 hover:-translate-y-1 cursor-pointer`}
+    >
+      <div className="relative aspect-[4/3] w-full bg-slate-900 overflow-hidden">
         <img 
           src={imageUrl} 
-          alt={item.visualPrompt}
-          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+          alt={item.category}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        <div className="absolute bottom-3 left-4 right-4">
-          <span className={`inline-block px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-white/90 ${theme.text} shadow-sm`}>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent opacity-90"></div>
+        
+        {/* Category Badge */}
+        <div className="absolute top-3 left-3">
+          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shadow-sm ${theme.badge}`}>
             {item.category}
           </span>
         </div>
-      </div>
 
-      <div className="p-6 flex-1 flex flex-col">
-        <h3 className="text-xl font-serif font-bold text-gray-900 leading-tight mb-3">
-          {item.headline}
-        </h3>
-        
-        <p className="text-sm text-gray-600 mb-6 leading-relaxed flex-grow">
-          {item.summary}
-        </p>
-
-        <div className={`mt-auto p-4 rounded-xl ${theme.bg} border ${theme.border}`}>
-          <div className="flex items-start gap-2">
-            <Lightbulb className={`w-4 h-4 mt-0.5 ${theme.text}`} />
-            <div>
-              <span className={`text-xs font-bold uppercase tracking-wide ${theme.text} block mb-1`}>Implication</span>
-              <p className={`text-sm ${theme.text} font-medium leading-snug`}>
-                {item.implication}
-              </p>
-            </div>
+        {/* External Link Icon on Hover */}
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="bg-black/50 backdrop-blur-sm p-1.5 rounded-full">
+            <ExternalLink className="w-3 h-3 text-white" />
           </div>
         </div>
       </div>
-    </div>
+
+      <div className="p-4 flex-1 flex flex-col relative z-10 -mt-8">
+        <h3 className="text-base font-bold text-white leading-tight mb-2 font-serif drop-shadow-md group-hover:text-indigo-200 transition-colors">
+          {item.headline}
+        </h3>
+        
+        <p className="text-xs text-slate-300 mb-3 leading-relaxed opacity-90 group-hover:opacity-100">
+          {item.summary}
+        </p>
+
+        <div className="mt-auto pt-3 border-t border-white/10 group-hover:border-white/20 transition-colors">
+          <div className="flex items-start gap-1.5">
+            <Lightbulb className={`w-3 h-3 mt-0.5 flex-shrink-0 ${theme.text}`} />
+            <p className={`text-[10px] ${theme.text} font-medium leading-tight`}>
+              {item.implication}
+            </p>
+          </div>
+        </div>
+      </div>
+    </a>
   );
 };
 
 export const PulseDisplay: React.FC<PulseDisplayProps> = ({ data }) => {
   return (
-    <div className="w-full max-w-6xl animate-fade-in-up pb-12">
+    <div className="w-full max-w-7xl animate-fade-in-up pb-12">
       
-      {/* Section Header */}
-      <div className="flex items-center gap-3 mb-8 px-4">
-        <BookOpen className="w-6 h-6 text-white" />
-        <h2 className="text-2xl font-serif font-bold text-white tracking-wide">
-          Today's Intel
-        </h2>
-        <div className="h-px bg-white/20 flex-1 ml-4"></div>
-      </div>
-
-      {/* Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 px-4">
-        {data.items.map((item, idx) => (
-          <CategoryCard key={idx} item={item} index={idx} />
-        ))}
-      </div>
-
-      {/* Sources Section */}
-      {data.sources.length > 0 && (
-        <div className="mt-12 mx-4 p-6 bg-slate-800/50 backdrop-blur-md rounded-xl border border-slate-700/50">
-          <h4 className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-            <TrendingUp className="w-4 h-4" />
-            Verified Sources
-          </h4>
-          <div className="flex flex-wrap gap-3">
-            {data.sources.map((source, idx) => (
-              <a
-                key={idx}
-                href={source.uri}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700/50 text-slate-300 text-xs hover:bg-indigo-600 hover:text-white transition-all border border-slate-600 hover:border-indigo-500"
-                title={source.title}
-              >
-                <ExternalLink className="w-3 h-3" />
-                <span className="max-w-[150px] truncate">{source.title}</span>
-              </a>
-            ))}
-          </div>
+      {/* SECTION 1: GLOBAL SIGNALS */}
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-4 px-4">
+          <Zap className="w-5 h-5 text-amber-400" />
+          <h2 className="text-lg font-serif font-bold text-white tracking-wide">
+            Global Signals
+          </h2>
+          <div className="h-px bg-white/10 flex-1 ml-4"></div>
         </div>
-      )}
-      
-      <div className="mt-8 text-center text-slate-500 text-xs">
-        Images generated real-time based on content analysis.
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
+          {data.general.map((item, idx) => (
+            <Card key={`gen-${idx}`} item={item} index={idx} section="general" />
+          ))}
+        </div>
+      </div>
+
+      {/* SECTION 2: HEALTH AI */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-4 px-4">
+          <Activity className="w-5 h-5 text-emerald-400" />
+          <h2 className="text-lg font-serif font-bold text-white tracking-wide">
+            Health AI Frontier
+          </h2>
+          <div className="h-px bg-white/10 flex-1 ml-4"></div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
+          {data.healthAi.map((item, idx) => (
+            <Card key={`health-${idx}`} item={item} index={idx} section="health" />
+          ))}
+        </div>
       </div>
     </div>
   );
